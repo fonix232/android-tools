@@ -154,21 +154,38 @@ jobs:
             ..
           ninja --verbose
           echo -e "\n### make install ###\n"
-          cmake --install . --prefix /usr/local
+          ARTIFACT_NAME="android-tools-linux-${{ matrix.os }}"
+          cmake --install . --prefix "${ARTIFACT_NAME}"
           echo -e "\n### all done ###\n"
 
       - name: check
         run: |
-          /usr/local/bin/adb --version
-          /usr/local/bin/fastboot --version
-          /usr/local/bin/make_f2fs -V
-          /usr/local/bin/sload_f2fs -V
+          cd android-tools-*/build
+          ARTIFACT_NAME="android-tools-linux-${{ matrix.os }}"
+          "${ARTIFACT_NAME}/bin/adb" --version
+          "${ARTIFACT_NAME}/bin/fastboot" --version
+          "${ARTIFACT_NAME}/bin/make_f2fs" -V
+          "${ARTIFACT_NAME}/bin/sload_f2fs" -V
+
+      - name: create tarball
+        run: |
+          cd android-tools-*/build
+          ARTIFACT_NAME="android-tools-linux-${{ matrix.os }}"
+          tar -czf "${ARTIFACT_NAME}.tar.gz" "${ARTIFACT_NAME}"
+          echo "ARTIFACT_PATH=${ARTIFACT_NAME}.tar.gz" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+
+      - name: upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: android-tools-*/build/${{ env.ARTIFACT_PATH }}
 
   macos:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13, macos-14, macos-15]
+        os: [macos-13, macos-14, macos-15, macos-26]
     runs-on: ${{ matrix.os }}
     needs: [upload-src]
     steps:
@@ -206,12 +223,29 @@ jobs:
             ..
           ninja --verbose
           echo -e "\n### make install ###\n"
-          cmake --install .
+          ARTIFACT_NAME="android-tools-${{ matrix.os }}"
+          cmake --install . --prefix "${ARTIFACT_NAME}"
           echo -e "\n### all done ###\n"
 
       - name: check
         run: |
-          $HOME/android-tools/bin/adb --version
-          $HOME/android-tools/bin/fastboot --version
-          $HOME/android-tools/bin/make_f2fs -V
-          $HOME/android-tools/bin/sload_f2fs -V
+          cd android-tools-*/build
+          ARTIFACT_NAME="android-tools-${{ matrix.os }}"
+          "${ARTIFACT_NAME}/bin/adb" --version
+          "${ARTIFACT_NAME}/bin/fastboot" --version
+          "${ARTIFACT_NAME}/bin/make_f2fs" -V
+          "${ARTIFACT_NAME}/bin/sload_f2fs" -V
+
+      - name: create tarball
+        run: |
+          cd android-tools-*/build
+          ARTIFACT_NAME="android-tools-${{ matrix.os }}"
+          tar -czf "${ARTIFACT_NAME}.tar.gz" "${ARTIFACT_NAME}"
+          echo "ARTIFACT_PATH=${ARTIFACT_NAME}.tar.gz" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+
+      - name: upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: android-tools-*/build/${{ env.ARTIFACT_PATH }}
